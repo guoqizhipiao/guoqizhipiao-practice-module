@@ -29,89 +29,113 @@ import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
 import org.slf4j.Logger;
 
-// The value here should match an entry in the META-INF/mods.toml file
+// 此处的值应与 META-INF/mods.toml 文件中的条目匹配。
 @Mod(Bosezi_mod.MODID)
 public class Bosezi_mod {
 
-    // Define mod id in a common place for everything to reference
+    // 在一个公共位置定义模组ID，供所有内容引用
     public static final String MODID = "bosezi_mod";
-    // Directly reference a slf4j logger
+    // 直接引用一个 slf4j 日志记录器
     private static final Logger LOGGER = LogUtils.getLogger();
-    // Create a Deferred Register to hold Blocks which will all be registered under the "bosezi_mod" namespace
-    public static final DeferredRegister<Block> BLOCKS = DeferredRegister.create(ForgeRegistries.BLOCKS, MODID);
-    // Create a Deferred Register to hold Items which will all be registered under the "bosezi_mod" namespace
-    public static final DeferredRegister<Item> ITEMS = DeferredRegister.create(ForgeRegistries.ITEMS, MODID);
-    // Create a Deferred Register to hold CreativeModeTabs which will all be registered under the "bosezi_mod" namespace
-    public static final DeferredRegister<CreativeModeTab> CREATIVE_MODE_TABS = DeferredRegister.create(Registries.CREATIVE_MODE_TAB, MODID);
 
-    // Creates a new Block with the id "bosezi_mod:example_block", combining the namespace and path
-    public static final RegistryObject<Block> EXAMPLE_BLOCK = BLOCKS.register("example_block", () -> new Block(BlockBehaviour.Properties.of().mapColor(MapColor.STONE)));
-    // Creates a new BlockItem with the id "bosezi_mod:example_block", combining the namespace and path
-    public static final RegistryObject<Item> EXAMPLE_BLOCK_ITEM = ITEMS.register("example_block", () -> new BlockItem(EXAMPLE_BLOCK.get(), new Item.Properties()));
+    // 方块注册表
+    public static final DeferredRegister<Block> BLOCKS =
+            DeferredRegister.create(ForgeRegistries.BLOCKS, MODID);
 
-    // Creates a new food item with the id "bosezi_mod:example_id", nutrition 1 and saturation 2
-    public static final RegistryObject<Item> EXAMPLE_ITEM = ITEMS.register("example_item", () -> new Item(new Item.Properties().food(new FoodProperties.Builder().alwaysEat().nutrition(1).saturationMod(2f).build())));
+    // 物品注册表
+    public static final DeferredRegister<Item> ITEMS =
+            DeferredRegister.create(ForgeRegistries.ITEMS, MODID);
 
-    // Creates a creative tab with the id "bosezi_mod:example_tab" for the example item, that is placed after the combat tab
-    public static final RegistryObject<CreativeModeTab> EXAMPLE_TAB = CREATIVE_MODE_TABS.register("example_tab", () -> CreativeModeTab.builder().withTabsBefore(CreativeModeTabs.COMBAT).icon(() -> EXAMPLE_ITEM.get().getDefaultInstance()).displayItems((parameters, output) -> {
-        output.accept(EXAMPLE_ITEM.get()); // Add the example item to the tab. For your own tabs, this method is preferred over the event
-    }).build());
+    // 创造标签注册表
+    public static final DeferredRegister<CreativeModeTab> CREATIVE_MODE_TABS =
+            DeferredRegister.create(Registries.CREATIVE_MODE_TAB, MODID);
+
+    // 示例方块
+    public static final RegistryObject<Block> EXAMPLE_BLOCK =
+            BLOCKS.register("example_block",
+                    () -> new Block(BlockBehaviour.Properties.of().mapColor(MapColor.STONE)));
+
+    // 示例方块对应的 BlockItem（物品栏里的方块形态）
+    public static final RegistryObject<Item> EXAMPLE_BLOCK_ITEM =
+            ITEMS.register("example_block",
+                    () -> new BlockItem(EXAMPLE_BLOCK.get(), new Item.Properties()));
+
+    // 示例物品
+    public static final RegistryObject<Item> EXAMPLE_ITEM =
+            ITEMS.register("example_item",
+                    () -> new Item(new Item.Properties()
+                            .food(new FoodProperties.Builder().alwaysEat().nutrition(1).saturationMod(2f).build())));
+
+    // 示例创造标签
+    public static final RegistryObject<CreativeModeTab> EXAMPLE_TAB =
+            CREATIVE_MODE_TABS.register("example_tab", () ->
+                    CreativeModeTab.builder()
+                            .withTabsBefore(CreativeModeTabs.COMBAT)
+                            .icon(() -> EXAMPLE_ITEM.get().getDefaultInstance())
+                            .displayItems((parameters, output) -> {
+                                output.accept(EXAMPLE_ITEM.get());
+                            }).build());
 
     public Bosezi_mod() {
+        // 获取当前模组的专属事件总线（Mod Event Bus）
         IEventBus modEventBus = FMLJavaModLoadingContext.get().getModEventBus();
-
-        // Register the commonSetup method for modloading
+        // 将 commonSetup 方法注册到模组事件总线，用于处理模组加载时的通用初始化工作
         modEventBus.addListener(this::commonSetup);
-
-        // Register the Deferred Register to the mod event bus so blocks get registered
+        // 将方块、物品、创造模式标签的延迟注册器（Deferred Register）绑定到模组事件总线
+        // 这样 Forge 会在合适的时机自动帮你注册这些游戏内容
         BLOCKS.register(modEventBus);
-        // Register the Deferred Register to the mod event bus so items get registered
         ITEMS.register(modEventBus);
-        // Register the Deferred Register to the mod event bus so tabs get registered
         CREATIVE_MODE_TABS.register(modEventBus);
-
-        // Register ourselves for server and other game events we are interested in
+        // 将当前类实例注册到 Forge 的全局事件总线（MinecraftForge.EVENT_BUS）
+        // 这样当前类中带有 @SubscribeEvent 注解的方法就能监听到游戏内的各种事件（如服务器启动、玩家加入等）
         MinecraftForge.EVENT_BUS.register(this);
-
-        // Register the item to a creative tab
+        // 监听“构建创造模式标签内容”的事件，用于把自定义物品放进创造模式物品栏
         modEventBus.addListener(this::addCreative);
-
-        // Register our mod's ForgeConfigSpec so that Forge can create and load the config file for us
+        // 注册模组的通用配置文件（Config），Forge 会自动帮我们创建和加载配置文件
         ModLoadingContext.get().registerConfig(ModConfig.Type.COMMON, Config.SPEC);
     }
 
+    // 模组通用初始化方法，在服务器和客户端都会执行
     private void commonSetup(final FMLCommonSetupEvent event) {
-        // Some common setup code
+        // 一些通用的初始化代码
         LOGGER.info("HELLO FROM COMMON SETUP");
+        // 打印泥土方块在注册表中的键名（用于测试注册表是否正常工作）
         LOGGER.info("DIRT BLOCK >> {}", ForgeRegistries.BLOCKS.getKey(Blocks.DIRT));
-
+        // 如果配置文件中开启了 logDirtBlock 选项，则再次打印泥土方块信息
         if (Config.logDirtBlock) LOGGER.info("DIRT BLOCK >> {}", ForgeRegistries.BLOCKS.getKey(Blocks.DIRT));
-
+        // 打印配置文件中的魔法数字介绍和具体数值
         LOGGER.info(Config.magicNumberIntroduction + Config.magicNumber);
-
+        // 遍历配置文件中的物品列表并逐个打印
         Config.items.forEach((item) -> LOGGER.info("ITEM >> {}", item.toString()));
     }
 
-    // Add the example block item to the building blocks tab
+    // 将示例方块物品添加到“建筑方块”创造模式标签页中
     private void addCreative(BuildCreativeModeTabContentsEvent event) {
-        if (event.getTabKey() == CreativeModeTabs.BUILDING_BLOCKS) event.accept(EXAMPLE_BLOCK_ITEM);
+        // 判断当前正在构建的标签页是否是“建筑方块”
+        if (event.getTabKey() == CreativeModeTabs.BUILDING_BLOCKS) {
+            // 如果是，则将我们的示例方块物品添加进去
+            event.accept(EXAMPLE_BLOCK_ITEM);
+        }
     }
 
-    // You can use SubscribeEvent and let the Event Bus discover methods to call
+    // 使用 @SubscribeEvent 注解，让事件总线自动发现并调用这个方法
     @SubscribeEvent
     public void onServerStarting(ServerStartingEvent event) {
-        // Do something when the server starts
+        // 当服务器开始启动时执行的操作（例如打印一条日志）
         LOGGER.info("HELLO from server starting");
     }
 
-    // You can use EventBusSubscriber to automatically register all static methods in the class annotated with @SubscribeEvent
+    // 使用 @Mod.EventBusSubscriber 注解，自动注册该类中所有带有 @SubscribeEvent 的静态方法
+    // modid: 指定模组ID；bus = MOD: 监听模组专属总线；value = Dist.CLIENT: 仅在客户端物理端生效
     @Mod.EventBusSubscriber(modid = MODID, bus = Mod.EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
     public static class ClientModEvents {
 
+        // 客户端专属的初始化方法（例如注册按键绑定、渲染器等只能在客户端运行的代码）
         @SubscribeEvent
         public static void onClientSetup(FMLClientSetupEvent event) {
-            // Some client setup code
+            // 一些客户端初始化代码
             LOGGER.info("HELLO FROM CLIENT SETUP");
+            // 打印当前 Minecraft 客户端登录的玩家用户名
             LOGGER.info("MINECRAFT NAME >> {}", Minecraft.getInstance().getUser().getName());
         }
     }

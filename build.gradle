@@ -64,6 +64,8 @@ minecraft {
         configureEach {
             workingDirectory project.file('run')
 
+            environment 'assets_root', file('E:/GZT/MC/Mod/minecraft-assets-1.20.1/assets').absolutePath
+
             // Recommended logging data for a userdev environment
             // The markers can be added/remove as needed separated by commas.
             // "SCAN": For mods scan.
@@ -192,3 +194,33 @@ tasks.withType(JavaCompile).configureEach {
     options.compilerArgs += ["-Xlint:-removal"] //关闭关于“即将被移除的 API”的编译警告
 }
 
+gradle.projectsEvaluated {
+
+    def removeDep = { Task t, String depName ->
+        if (t == null) return
+        t.dependsOn.removeAll { dep ->
+            (dep instanceof Task && dep.name.equalsIgnoreCase(depName)) ||
+                    (dep instanceof String && dep.equalsIgnoreCase(depName))
+        }
+    }
+
+    def killDownloadAssetsFor = { String taskName ->
+        def t = tasks.findByName(taskName)
+        removeDep(t, "downloadAssets")
+    }
+
+    [
+            "prepareRuns",
+            "prepareRunClient",
+            "prepareRunClientCompile",
+            "prepareRunServer",
+            "prepareRunData",
+            "prepareRunDataCompile"
+    ].each { killDownloadAssetsFor(it) }
+
+    ["runClient", "runData", "runServer", "rundata", "runclient", "runserver"].each { killDownloadAssetsFor(it) }
+}
+
+tasks.matching { it.name.equalsIgnoreCase("downloadAssets") }.configureEach {
+    enabled = false
+}
