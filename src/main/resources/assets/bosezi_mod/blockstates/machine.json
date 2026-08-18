@@ -1,0 +1,8 @@
+{
+	"variants": {
+		"facing=north": { "model": "bosezi_mod:block/machine"},
+		"facing=south": { "model": "bosezi_mod:block/machine", "y": 180},
+		"facing=west": { "model": "bosezi_mod:block/machine", "y": 270 },
+		"facing=east": { "model": "bosezi_mod:block/machine", "y": 90 }
+	}
+}

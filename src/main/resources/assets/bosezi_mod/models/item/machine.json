@@ -1,0 +1,12 @@
+{
+	"parent": "minecraft:block/cube",
+	"textures": {
+		"north": "bosezi_mod:block/machine/machine_north",
+		"south": "bosezi_mod:block/machine/machine_south",
+		"east": "bosezi_mod:block/machine/machine_east",
+		"west": "bosezi_mod:block/machine/machine_west",
+		"up": "bosezi_mod:block/machine/machine_up",
+		"down": "bosezi_mod:block/machine/machine_down",
+		"particle": "bosezi_mod:block/machine/machine_down"
+	}
+}

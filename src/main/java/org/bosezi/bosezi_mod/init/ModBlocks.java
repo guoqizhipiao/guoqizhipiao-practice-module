@@ -1,5 +1,7 @@
 package org.bosezi.bosezi_mod.init;
 
+import net.minecraft.world.item.BlockItem;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockBehaviour;
@@ -8,6 +10,9 @@ import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
 import org.bosezi.bosezi_mod.Bosezi_mod;
+import org.bosezi.bosezi_mod.tutorial.block.machine.machine;
+
+import java.util.function.Supplier;
 
 public class ModBlocks {
     // 创建一个方块注册器。
@@ -21,16 +26,49 @@ public class ModBlocks {
         BLOCKS.register(eventBus);
     }
 
+    // 通用方块注册方法。
+    // name 为注册名，block 为方块的创建方法（Supplier）。
+    // 使用泛型 <T extends Block>，使该方法可以注册任意 Block 子类。
+    private static <T extends Block> RegistryObject<T> registerBlock(String name, Supplier<T> block){
+
+        // 向方块注册器中声明该方块
+        RegistryObject<T> toReturn = BLOCKS.register(name, block);
+
+        // 同时为该方块自动注册对应的 BlockItem，
+        // 使方块能够出现在背包中并被玩家放置。
+        registerBlockItem(name, toReturn);    // 我们会在稍后补全 registerBlockItem 方法，目前会正常报错
+
+        // 返回注册结果，方便在其他地方引用该方块
+        return toReturn;
+    }
+
+    // 为已注册的方块创建并注册对应的 BlockItem。
+    // name 为注册名（应与方块注册名保持一致），
+    // block 为方块的 RegistryObject，用于获取方块实例。
+    private static <T extends Block> RegistryObject<Item> registerBlockItem(String name, RegistryObject<T> block){
+
+        // 在物品注册器中注册一个 BlockItem。
+        // block.get() 获取已经声明的方块实例，
+        // 这样玩家在背包中持有该物品时，才能放置出对应的方块。
+        return ModItems.ITEMS.register(
+                name,
+                () -> new BlockItem(block.get(), new Item.Properties())
+        );
+    }
     // 注册一个示例方块：raw_material_block。
     // "raw_material_block" 为方块的注册名，
     // 同时用于资源文件（模型、贴图等）的命名基础。
     public static final RegistryObject<Block> RAW_MATERIAL_BLOCK =
-            BLOCKS.register("raw_material_block",
+            registerBlock("raw_material_block",
                     // 创建方块实例。
                     // 这里通过 copy(Blocks.IRON_BLOCK) 复制铁块的基础属性，
                     // 使该方块拥有类似的硬度、抗爆性等行为，
                     // 作为当前阶段的简单示例方块使用。
                     () -> new Block(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK)));
 
+    public  static  final  RegistryObject<Block> MACHINE =
+            registerBlock("machine",
+                    // 机器方块
+                    machine::new);
 
 }

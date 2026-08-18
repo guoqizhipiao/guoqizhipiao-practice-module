@@ -31,8 +31,10 @@ public class ModCreativeModeTabs {
                             // 定义该标签中显示的物品内容。
                             // output.accept(...) 用于向标签中添加物品。
                             .displayItems((itemDisplayParameters, output) -> {
+
                                 output.accept(ModItems.RAW_MATERIAL.get());    // 粗材料
                                 output.accept(ModBlocks.RAW_MATERIAL_BLOCK.get());
+                                output.accept(ModBlocks.MACHINE.get());
                             })
 
                             // 构建最终的 CreativeModeTab 实例。
